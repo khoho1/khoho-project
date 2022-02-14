@@ -7,13 +7,13 @@ You should use puttygen.exe to create a .ppk file for your pageant.exe. This way
 
 How to run Terraform:
 
-    set AWS_ACCESS_KEY_ID=<replace_with_your_access_id>
-    set AWS_SECRET_ACCESS_KEY=<replace_with_your_secret_key>
+    $ set AWS_ACCESS_KEY_ID=<replace_with_your_access_id>
+    $ set AWS_SECRET_ACCESS_KEY=<replace_with_your_secret_key>
 
-    terraform workspace new aws_ec2_uswest1
-    terraform workspace select aws_ec2_uswest1
-    terraform workspace list
+    $ terraform workspace new aws_ec2_uswest1
+    $ terraform workspace select aws_ec2_uswest1
+    $ terraform workspace list
 
-    terraform init
-    terraform apply -auto-approve
+    $ terraform init
+    $ terraform apply -auto-approve
 
