@@ -1,0 +1,20 @@
+---
+## Author: Kho Ho - Playbook Variables
+
+  #################### Section: Replication Slave ####################
+  config_slave_replication: true                      ## Use true or false
+
+  mydb_user: 'root'
+  mydb_pass: 'CHANGE_PASSWORD'
+  mydb_port: 3306
+  mydb_socket: '/var/run/mysqld/mysqld.sock'
+
+  repl_user: "repl"
+  repl_pass: "CHANGE_PASSWORD"
+  repl_host: "10.9.22.%"      ## Change this to your subnet network
+  repl_port: "3306"
+  repl_privs: "REPLICATION SLAVE,REPLICATION CLIENT"
+
+  os_common_packages:
+    - MySQL-python
+

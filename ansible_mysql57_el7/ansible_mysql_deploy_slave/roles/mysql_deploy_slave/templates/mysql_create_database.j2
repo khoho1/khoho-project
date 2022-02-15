@@ -1,0 +1,8 @@
+-- Author: Kho Ho
+-- Description: Create dbtools database and heartbeat table
+
+create database if not exists dbtools;
+use dbtools;
+drop table if exists heartbeat;
+create table if not exists heartbeat (master_host varchar(64) not null primary key, ts datetime not null);
+insert into heartbeat values(@@hostname, now());

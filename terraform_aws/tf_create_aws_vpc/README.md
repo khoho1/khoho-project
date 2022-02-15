@@ -1,6 +1,6 @@
 ## Create AWS VPC resource
 
-This Terraform project creates Amazon Virtual Private Cloud (VPC) network with Internet Gateway, pulic and private for each availability zone, and single NAT Gateway.
+This Terraform project creates Amazon Virtual Private Cloud (VPC) network with Internet Gateway, pulic and private for each availability zone, and single NAT Gateway. Review the aws_variables.tf file and update to your environment. For better security, you should use your router public IP for cidr_blocks that allows SSH to connect.
 
 
 How to run Terraform:

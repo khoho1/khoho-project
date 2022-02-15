@@ -28,7 +28,10 @@ resource "aws_instance" "myVM" {
   monitoring                  = "false"
   associate_public_ip_address = var.config_public_ip
 
-  tags = { Name = lookup(var.vm_props, "vm_name") }
+  count = var.instance_count
+  tags = {
+    Name = "${var.vm_name}${count.index + 1}"
+  }
 
   security_groups = var.sg_name
   # vpc_security_group_ids = var.sg_name
@@ -37,7 +40,9 @@ resource "aws_instance" "myVM" {
     volume_size           = lookup(var.vm_disk, "root_size")
     volume_type           = "gp3" ## gp3 perform better and cost less than gp2
     delete_on_termination = true
-    tags                  = { Name = "${lookup(var.vm_props, "vm_name")}_rootDisk" }
+    tags = {
+      Name = "${var.vm_name}${count.index + 1}_rootDisk"
+    }
   }
 
   ebs_block_device {
@@ -45,14 +50,15 @@ resource "aws_instance" "myVM" {
     volume_size           = lookup(var.vm_disk, "data_size")
     volume_type           = "gp3" ## gp3 perform better and cost less than gp2
     delete_on_termination = true
-    tags                  = { Name = "${lookup(var.vm_props, "vm_name")}_dataDisk" }
+    tags = {
+      Name = "${var.vm_name}${count.index + 1}_dataDisk"
+    }
   }
 
   // Copy script file over to EC2 instance
   provisioner "file" {
     source      = "./disk_format_mount.sh"
     destination = "/home/centos/disk_format_mount.sh"
-
     connection {
       type        = "ssh"
       user        = "centos"
@@ -64,7 +70,6 @@ resource "aws_instance" "myVM" {
   // Change file permission on EC2 instance
   provisioner "remote-exec" {
     inline = ["chmod 750 ~/disk_format_mount.sh"]
-
     connection {
       type        = "ssh"
       user        = "centos"
@@ -73,30 +78,29 @@ resource "aws_instance" "myVM" {
     }
   }
 
-  // Copy script file over to EC2 instance
-  provisioner "file" {
-    source      = var.key_name
-    destination = "/home/centos/aws_ec2_uswest1_private_key.pem"
-
-    connection {
-      type        = "ssh"
-      user        = "centos"
-      private_key = file("${var.key_name}")
-      host        = self.public_ip
-    }
-  }
+  // Uncomment below to copy your private key over.
+  // Use this for you jumpbox only.
+  # provisioner "file" {
+  #   source      = var.key_name
+  #   destination = "/home/centos/aws_ec2_uswest1_private_key.pem"
+  #   connection {
+  #     type        = "ssh"
+  #     user        = "centos"
+  #     private_key = file("${var.key_name}")
+  #     host        = self.public_ip
+  #   }
+  # }
 
   // Change file permission on EC2 instance
-  provisioner "remote-exec" {
-    inline = ["chmod 400 ~/aws_ec2_uswest1_private_key.pem"]
-
-    connection {
-      type        = "ssh"
-      user        = "centos"
-      private_key = file("${var.key_name}")
-      host        = self.public_ip
-    }
-  }
+  # provisioner "remote-exec" {
+  #   inline = ["chmod 400 ~/aws_ec2_uswest1_private_key.pem"]
+  #   connection {
+  #     type        = "ssh"
+  #     user        = "centos"
+  #     private_key = file("${var.key_name}")
+  #     host        = self.public_ip
+  #   }
+  # }
 
 }
 

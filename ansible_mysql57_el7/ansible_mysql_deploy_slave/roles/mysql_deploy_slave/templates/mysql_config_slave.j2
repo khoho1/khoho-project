@@ -1,0 +1,13 @@
+-- Author: Kho Ho
+-- Description: Configure MySQL replication
+
+change master to
+  master_host='{{hostvars[groups['mysql_master'][0]].ansible_all_ipv4_addresses[0]}}',
+  master_port={{mydb_port}},
+  master_ssl=1,
+  master_user='{{repl_user}}',
+  master_password='{{repl_pass}}',
+  master_auto_position=1;
+
+start slave;
+

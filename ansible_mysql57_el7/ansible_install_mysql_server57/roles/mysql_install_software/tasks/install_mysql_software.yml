@@ -1,0 +1,119 @@
+---
+## Author: Kho Ho - Playbook MySQL Software Installation
+
+  - name: Install MySQL repository package
+    yum: name="{{mysql_repo_software}}" state=present
+
+  - name: Install MySQL will fail unless we import lastest GPG Key
+    rpm_key:
+      state: present
+      key: https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+
+  # - name: Install MySQL will fail unless we import lastest GPG Key
+  #   command: rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
+
+  - name: Shutdown MySQL instance
+    systemd: name=mysqld state=stopped enabled=no
+    ignore_errors: yes
+    when: reg_sw_package.results[0].name is defined
+
+  - name: Remove MySQL Server and Shell packages
+    yum: name="{{mysql_remove_pkg_list}}" state=absent
+    ignore_errors: yes
+    when: reg_sw_package.results[0].name is defined
+
+  - name: Install MySQL Server packages
+    yum: name="{{ mysql_install_pkg_list }}" state=present
+
+  - name: Configure user ulimits
+    template: src=mysql_limits.conf.j2 dest=/etc/security/limits.d/mysql_limits.conf
+    when: configure_os_user
+
+  ##########################################################
+
+  - name: "Remove configuration file - {{ mydb_config1 }}"
+    file: path={{ mydb_config1 }} state=absent
+
+  - name: "Remove all files in {{ mydb_real_dir }}"
+    file: path={{ mydb_real_dir }} state=absent
+
+  - name: "Remove all files in {{ mydb_data_dir }}"
+    file: path={{ mydb_data_dir }} state=absent
+
+  - name: "Create directory {{ mydb_file_dir }}"
+    file: path={{ mydb_file_dir }} state=directory owner=mysql group=mysql mode=755
+
+  - name: "Create directory {{ mydb_real_dir }}"
+    file: path={{ mydb_real_dir }} state=directory owner=mysql group=mysql mode=755
+
+  - name: "Create link from {{ mydb_data_dir }} to {{ mydb_real_dir }}"
+    file: src={{ mydb_real_dir }} dest={{ mydb_data_dir }} state=link owner=mysql group=mysql
+
+  - name: "Copy database config file - {{ mydb_config1 }}"
+    template: src=mysql57_config1.cnf.j2 dest={{ mydb_config1 }} owner=root group=mysql mode=664
+
+  - name: "Get IP address and extract host number"
+    shell: ifconfig | grep inet | grep -m 1 cast | awk -F' ' '{print $2}' | awk -F'.' '{print $4}'
+    register: server_id
+
+  - name: "Update config file parameter server id"
+    replace: path={{ mydb_config1 }} regexp='CHANGE_SERVER_ID' replace={{ server_id.stdout }}
+
+  ##########################################################
+
+  - name: Create MySQL override path
+    file: path="{{ mydb_override_path }}" state=directory owner=root group=root mode=755
+
+  - name: Create MySQL override file
+    template: src=mysql_override.conf.j2 dest="{{ mydb_override_path }}/{{ mydb_override_file }}" owner=root group=root mode=644
+
+  - name: Force systemd to reload configs
+    systemd: daemon_reload=yes
+
+  ##########################################################
+
+  - name: Check if data directory is empty
+    find: path={{ mydb_data_dir }} patterns='*'
+    register: db_file_count
+
+  - name: '********** Data Directory Initialize **********'
+    command: mysqld --defaults-file={{ mydb_config1 }} --initialize-insecure
+    when: db_file_count.matched|int == 0
+
+  - name: Start database instance
+    systemd: name=mysqld state=started enabled=yes
+
+  ##########################################################
+
+  - name: Configure user config file
+    template: src=user_client.cnf.j2 dest=/home/mysql/.my.cnf owner=mysql group=mysql mode=600
+
+  - name: Configure user config file
+    template: src=user_client.cnf.j2 dest=/home/{{ansible_admin_user}}/.my.cnf owner={{ansible_admin_user}} group={{ansible_admin_user}} mode=600
+
+  - name: Check database connection
+    command: mysql -P {{ mydb_port }} -u root --skip-password --execute "SELECT NOW()"
+    register: reg_check_db_connection
+    ignore_errors: yes
+
+  - name: Change password for root account
+    command: mysql -P {{ mydb_port }} -u root --skip-password -e "{{ stmt }}"
+    vars:
+      stmt: "ALTER USER root@'localhost' IDENTIFIED BY '{{ mysql_root_passwd }}';"
+    when: reg_check_db_connection.rc == 0
+
+  - name: Copy MySQL secure script
+    copy:
+      src: mysql_secure_installation.sql
+      dest: "/tmp/mysql_secure_installation.sql"
+      mode: "0644"
+
+  - name: Copy account script
+    template: src=mysql_create_account.j2 dest=/tmp/mysql_create_account.sql owner={{ansible_admin_user}} group={{ansible_admin_user}} mode=600
+
+  - name: Secure MySQL installation and create accounts
+    command: mysql -P {{ mydb_port }} -u root -p"{{mysql_root_passwd}}" -e "source {{item}}"
+    with_items:
+      - "/tmp/mysql_secure_installation.sql"
+      - "/tmp/mysql_create_account.sql"
+

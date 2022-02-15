@@ -23,7 +23,7 @@ variable "vm_disk" {
   type = map(number)
   default = {
     root_size = 10
-    data_size = 2
+    data_size = 10
   }
 }
 

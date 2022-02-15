@@ -1,0 +1,97 @@
+---
+## Author: Kho Ho - Playbook Variables
+
+  ansible_admin_user: "centos"            ## Use CentOS=centos, RHEL=ec2_user
+
+  #################### Section: MySQL Install Software ####################
+  mysql_sw_install_force: true            ## Use true or false
+  mysql_sw_pkg_search: "mysql-community-server"
+  mysql_sw_version: "5.7.36"              ## MySQL 5.7 ONLY works on Linux 7.x, not Linux 8.x
+
+  mysql_root_passwd: 'CHANGE_PASSWORD'
+
+  mysql_admin_user:
+    - {user: dbeadmin, password: "CHANGE_PASSWORD", host: "%", priv: "*.*:ALL PRIVILEGES"}
+    - {user: nagios, password: "CHANGE_PASSWORD", host: "%", priv: "*.*:USAGE,SELECT,PROCESS,REPLICATION CLIENT"}
+
+  repo_mysql57_el6: "https://repo.mysql.com/mysql57-community-release-el6.rpm"
+  repo_mysql57_el7: "https://repo.mysql.com/mysql57-community-release-el7.rpm"
+  mysql_repo_software: "{%if ansible_distribution_major_version|int==6 %}{{repo_mysql57_el6}}{%elif ansible_distribution_major_version|int==7 %}{{repo_mysql57_el7}}{% else %}{{repo_mysql57_el7}}{% endif %}"
+
+  ## Archive URL: https://downloads.mysql.com/archives/community/
+  # tar_mysql57_el6: "https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.36-1.el6.x86_64.rpm-bundle.tar"
+  # tar_mysql57_el7: "https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.36-1.el7.x86_64.rpm-bundle.tar"
+  # tar_mysql80_el7: "https://downloads.mysql.com/archives/get/p/23/file/mysql-8.0.27-1.el7.x86_64.rpm-bundle.tar"
+  # tar_mysql80_el8: "https://downloads.mysql.com/archives/get/p/23/file/mysql-8.0.27-1.el8.x86_64.rpm-bundle.tar"
+
+  mysql_install_pkg_list:
+  - "mysql-community-common-{{mysql_sw_version}}"
+  - "mysql-community-libs-{{mysql_sw_version}}"
+  - "mysql-community-devel-{{mysql_sw_version}}"
+  - "mysql-community-client-{{mysql_sw_version}}"
+  - "mysql-community-server-{{mysql_sw_version}}"
+
+
+  mysql_remove_pkg_list:
+    - "mysql-community*"
+    - "mysql-shell"
+
+  mydb_config1: '/etc/my.cnf'                      ## MySQL config file
+  mydb_real_dir: '/data/mysql'                     ## MySQL data files folder
+  mydb_data_dir: '/var/lib/mysql'                  ## Folder link to data files
+  mydb_file_dir: '/var/lib/mysql-files'
+  mydb_socket: '/var/run/mysqld/mysqld.sock'
+  mydb_port: '3306'
+
+  mydb_override_path: '/etc/systemd/system/mysqld.service.d'
+  mydb_override_file: 'override.conf'
+
+  #################### Section: Linux Common ####################
+  disable_firewall: true
+  disable_selinux: true
+  configure_etc_hosts: true
+  configure_os_user: true
+
+  os_groups:
+    - { group: mysql,  gid: 27 }
+
+  os_users:                                   ## Use strong password in production
+    - { username: mysql, uid: 27, primgroup: mysql, othergroups: "wheel", passwd: "{{ 'CHANGE_PASSWORD' | password_hash('sha512') }}" }
+
+  # ssh_auth_keys:        ## This is the ssh public key place in the authorized_keys file on the VM so you can ssh to without password
+  #   - "CHANGE_SSH_PUBLIC_KEY"
+
+  firewall_service: "{%if ansible_distribution_major_version|int==6 %}iptables{%elif ansible_distribution_major_version|int==7 %}firewalld{% else %}0{% endif %}"
+
+  os_common_packages:
+    - autofs
+    - bind-utils
+    - chrony
+    - ethtool
+    - expect
+    - gcc
+    - iscsi-initiator-utils
+    - lsof
+    - make
+    - mutt
+    - net-tools
+    - nfs-utils
+    - openssh-clients
+    - parted
+    - procps
+    - psmisc
+    - MySQL-python
+    # - python-devel
+    # - python2-pip
+    - python3
+    - python3-devel
+    - rlwrap
+    - screen
+    - sysstat
+    - unzip
+    - vim
+    - xfsprogs
+    - xorg-x11-xauth
+    # - yum-utils
+
+

@@ -1,0 +1,8 @@
+##### Define playbook hosts
+
+[mysql_master]
+mysql61  ansible_host=18.144.42.55   private_ip=10.9.22.178
+
+[mysql_slave]
+mysql64  ansible_host=54.177.235.174
+

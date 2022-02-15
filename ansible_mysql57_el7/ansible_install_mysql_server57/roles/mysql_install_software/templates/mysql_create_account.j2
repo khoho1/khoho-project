@@ -1,0 +1,10 @@
+--
+-- Create MySQL Accounts and Privileges
+--
+
+{% for acct in mysql_admin_user %}
+{% set privs = acct.priv.split(':')  %}
+  create user if not exists {{acct.user}}@'{{acct.host}}' identified by '{{acct.password}}' password expire never;
+  grant {{privs[1]}} on {{privs[0]}} to {{acct.user}}@'{{acct.host}}';
+
+{% endfor %}

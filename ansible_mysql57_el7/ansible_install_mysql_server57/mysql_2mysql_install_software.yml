@@ -1,0 +1,13 @@
+---
+## Author: Kho Ho - Playbook
+
+  - name: "MySQL Installl and Configure"
+    hosts: all
+    remote_user: centos
+    become: yes
+    gather_facts: true
+    serial: 10
+    roles:
+      - mysql_install_software
+
+

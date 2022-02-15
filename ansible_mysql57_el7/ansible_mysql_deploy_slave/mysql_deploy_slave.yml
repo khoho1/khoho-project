@@ -1,0 +1,12 @@
+---
+## Author: Kho Ho - Playbook
+
+  - name: "Add standalone slave"
+    hosts: all
+    remote_user: centos
+    become: yes
+    gather_facts: true
+    serial: 10
+    roles:
+      - mysql_deploy_slave
+

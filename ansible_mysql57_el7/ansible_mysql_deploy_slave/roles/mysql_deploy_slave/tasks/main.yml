@@ -1,0 +1,88 @@
+---
+## Author: Kho Ho - Playbook Deploy MySQL Slave
+
+  - name: Install Linux common packages
+    yum: name={{ os_common_packages }} state=latest
+
+  - name: Create replication accounts
+    command: mysql -P {{ mydb_port }} -u {{mydb_user}} -e "{{ item }}"
+    with_items:
+        - "create user if not exists {{repl_user}}@'{{repl_host}}' identified by '{{repl_pass}}';"
+        - "grant {{repl_privs}} on *.* to {{repl_user}}@'{{repl_host}}';"
+        - "flush privileges;"
+    become_user: "mysql"
+    no_log: True
+    when: config_slave_replication == true and (func_role == 'master' or func_role == 'slave')
+
+  - name: Clone database and start replication
+    command: mysql -P {{ mydb_port }} -u {{mydb_user}} -e "{{ item }}"
+    with_items:
+        - "stop slave;"
+        - "reset slave all;"
+    become_user: "mysql"
+    no_log: False
+    when: config_slave_replication == true and func_role == 'slave'
+
+  # - name: Copy script file
+  #   template: src=mysql_config_slave.j2 dest=/tmp/mysql_config_slave.sql mode=0666
+  #   become_user: "mysql"
+  #   when: config_slave_replication == true and func_role == 'slave'
+
+  - name: Configure and start replication
+    command: mysql -P {{ mydb_port }} -u {{mydb_user}} -e "{{ item }}"
+    with_items:
+        # - "change master to master_host='{{hostvars[groups['mysql_master'][0]].ansible_all_ipv4_addresses[0]}}', master_port={{mydb_port}}, master_ssl=1, master_user='{{repl_user}}', master_password='{{repl_pass}}', master_auto_position=1;"
+        - "change master to master_host='{{hostvars[groups['mysql_master'][0]].private_ip}}', master_port={{mydb_port}}, master_ssl=1, master_user='{{repl_user}}', master_password='{{repl_pass}}', master_auto_position=1;"
+        - "start slave;"
+    become_user: "mysql"
+    no_log: True
+    when: config_slave_replication == true and func_role == 'slave'
+
+  - name: Copy script file
+    template: src=mysql_create_database.j2 dest=/tmp/mysql_create_database.sql mode=0666
+    become_user: "mysql"
+    when: config_slave_replication == true and func_role == 'master'
+
+  - name: Create dbtools database
+    command: mysql -P {{ mydb_port }} -u {{mydb_user}} -e "source /tmp/mysql_create_database.sql"
+    become_user: "mysql"
+    no_log: False
+    when: config_slave_replication == true and func_role == 'master'
+
+  - name: Pause for 10 seconds
+    pause: seconds=10
+    when: config_slave_replication == true
+
+  # - name: Get slave replication status
+  #   command: mysql -u {{mydb_user}} -e "show slave status\G"
+  #   become_user: "mysql"
+  #   register: result
+  #   no_log: False
+  #   when: config_slave_replication == true and func_role == 'slave'
+  #
+  # - debug: msg="{{result.stdout_lines}}"
+  #   when: config_slave_replication == true and func_role == 'slave'
+
+
+  - name: Check slave replication status
+    mysql_replication:
+      mode: getslave
+    become_user: "mysql"
+    register: replication_status
+    # failed_when: replication_status.Seconds_Behind_Master == 'null'
+    when: config_slave_replication == true and func_role == 'slave'
+
+  - name: Print replication status
+    debug:
+      msg:
+        - "Executed_Gtid_Set: {{ replication_status.Executed_Gtid_Set }}"
+        - "Seconds Behind Master: {{ replication_status.Seconds_Behind_Master }}"
+        - "Slave_IO_Running: {{ replication_status.Slave_IO_Running }}"
+        - "Slave_SQL_Running: {{ replication_status.Slave_SQL_Running }}"
+        - "Last_SQL_Error: {{ replication_status.Last_SQL_Error }}"
+    when:
+      - config_slave_replication == true
+      - func_role == 'slave'
+      - replication_status.Is_Slave is defined and replication_status.Is_Slave == true
+
+

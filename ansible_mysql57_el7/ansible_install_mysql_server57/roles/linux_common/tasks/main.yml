@@ -1,0 +1,119 @@
+---
+## Author: Kho Ho - Playbook Commonn
+
+  - name: Show OS Family and Version
+    debug:
+      msg: "OS Family is {{ansible_os_family}} on version {{ansible_distribution_version}}"
+
+  - name: Install Linux EPEL repo
+    yum: name=epel-release state=installed
+
+  - name: Install Linux common packages
+    yum: name={{ os_common_packages }} state=latest
+
+    ##########################################################
+
+  - name: Check if firewall is installed
+    yum: list={{ firewall_service }} disablerepo=*
+    register: reg_firewall
+    when: disable_firewall
+
+  - name: Disable firewall
+    systemd: name="{{ firewall_service }}" state=stopped enabled=no
+    when: disable_firewall and reg_firewall.results
+
+  - name: Disable selinux
+    shell: setenforce 0
+    register: reg_selinux
+    changed_when: reg_selinux.rc == 0
+    failed_when: reg_selinux.rc > 0 and "SELinux is disabled" not in reg_selinux.stderr
+    when: disable_selinux
+
+  - name: Disable selinux permanently
+    selinux: policy=targeted state=disabled
+    when: disable_selinux
+
+  - name: Configure NTP client/server
+    systemd: name=chronyd state=started enabled=yes
+    when: ansible_distribution_major_version|int >= 7
+
+  - name: Configure IPs and hostnames on Linux 7
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item].ansible_default_ipv4.address }}  {{hostvars[item].ansible_fqdn}}  {{hostvars[item].ansible_hostname}}"
+      state: present
+    with_items: "{{ groups['all'] }}"
+    when: configure_etc_hosts and ansible_distribution_major_version|int == 7 and hostvars[item].ansible_default_ipv4.address is defined
+
+  - name: Configure IPs and hostnames on Linux 8
+    lineinfile:
+      dest: /etc/hosts
+      regexp: '.*{{ item }}$'
+      line: "{{ hostvars[item].ansible_default_ipv4.address }}  {{hostvars[item].ansible_nodename}}  {{hostvars[item].ansible_hostname}}"
+      state: present
+    with_items: "{{ groups['all'] }}"
+    when: configure_etc_hosts and ansible_distribution_major_version|int == 8 and hostvars[item].ansible_default_ipv4.address is defined
+
+  ##########################################################
+
+  - name: Create user groups
+    group: name={{ item.group }} gid={{ item.gid }} state=present
+    with_items: "{{ os_groups }}"
+    when: configure_os_user
+
+  - name: Create users account and generate ssh keys
+    user: name={{ item.username }}  group={{ item.primgroup }} groups={{ item.othergroups }} uid={{ item.uid }}
+          generate_ssh_key=yes append=yes state=present password={{ item.passwd }}
+    with_items: "{{ os_users }}"
+    when: configure_os_user
+
+  - name: Create ssh authorized_keys file
+    file: path="/home/{{item.username}}/.ssh/authorized_keys" owner={{item.username}} group={{item.primgroup}} state=touch mode=0600
+    with_items: "{{ os_users }}"
+    when: configure_os_user
+
+  # - name: Add ssh keys to authorized_keys file
+  #   lineinfile: dest="/home/{{os_users[0].username}}/.ssh/authorized_keys" line="{{item}}" state=present
+  #   with_items: "{{ ssh_auth_keys }}"
+  #   when: configure_os_user and ssh_auth_keys is defined
+
+  - name: Creates user scripts directory
+    file: path="/home/{{ item.username }}/scripts" owner="{{ item.username }}" group="{{ item.primgroup }}" mode=0755 state=directory
+    with_items: "{{ os_users }}"
+    when: configure_os_user
+
+  - name: Create user .bash_profile
+    template: src=bash_profile.j2 dest=/home/{{ item.username }}/.bash_profile
+    with_items: "{{ os_users }}"
+    when: configure_os_user
+
+  - name: Configure user sudoers
+    template: src=sudoers.js dest=/etc/sudoers.d/{{ item.username }} owner=root mode=0600
+    with_items:
+      - "{{ os_users }}"
+    when: configure_os_user
+
+  ##########################################################
+
+  # - name: Create admin account and generate ssh keys
+  #   user: name=khoho  group=mysql groups=adm generate_ssh_key=yes
+  #         append=yes state=present password="{{mysql_root_passwd}}"
+  #   when: configure_os_user
+
+  # - name: Create .bash_profile for user khoho
+  #   template: src=bash_profile.j2 dest=/home/khoho/.bash_profile
+
+  # - name: Create screenrc for user khoho
+  #   template: src=os_screenrc.j2 dest=/home/khoho/.screenrc
+
+  # - name: Add group to user khoho
+  #   user: name="khoho" groups="{{item.group}}" append=yes
+  #   with_items:
+  #     - "{{ os_groups}}"
+
+  ##########################################################
+
+  - name: Reboot server and wait for it to restart
+    reboot:
+

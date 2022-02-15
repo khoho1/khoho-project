@@ -1,0 +1,4 @@
+##### Setting variables tie to host group name
+
+func_role: replicas
+

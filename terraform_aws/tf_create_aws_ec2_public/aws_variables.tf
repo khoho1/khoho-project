@@ -1,9 +1,18 @@
 
+// Create multiple instances
+variable "instance_count" {
+  default = "2"
+}
+
+// Create VM instance names
+variable "vm_name" {
+  default = "khoho_apps_dev"
+}
+
 // Create Virtual Server on public subnet
 variable "vm_props" {
   type = map(string)
   default = {
-    vm_name = "khoho_mysql_dev1"
     vpc     = "vpc-0bedbc5be6743b20a" // Change to your VPC
     region  = "us-west-1"
     zone    = "us-west-1c"
@@ -23,7 +32,7 @@ variable "vm_disk" {
   type = map(number)
   default = {
     root_size = 10
-    data_size = 2
+    data_size = 10
   }
 }
 

@@ -1,0 +1,104 @@
+################################################################################
+## Author: Kho Ho        Last updated: 12/10/2021
+## MySQL 5.7 configuration file
+################################################################################
+
+
+[mysql]
+no-auto-rehash
+prompt                          = (\\u@\\h:\\p) [\\d]>\\_
+port                            = 3306
+socket                          = /var/run/mysqld/mysqld.sock
+default-character-set           = utf8mb4
+
+
+[mysqld]
+datadir                         = /var/lib/mysql
+log_error                       = /var/lib/mysql/mysql_error.log
+pid_file                        = /var/run/mysqld/mysqld.pid
+port                            = 3306
+server_id                       = {{server_id}}
+socket                          = {{ mydb_socket }}
+tmpdir                          = /tmp
+user                            = mysql
+character-set-server            = utf8mb4           ## Default is utf8. Set to utf8mb4.
+transaction_isolation           = read-committed    ## repeatable-read, read-committed, read-uncommitted, serializable
+
+########## Binary Logging Settings ##########
+expire_logs_days                = 30            ## The default is 0, which means “no automatic removal.”
+binlog_format                   = row           ## Default is row. Use mixed, statement, row.
+log_bin                         = mysql-bin
+max_binlog_size                 = 256M
+sync_binlog                     = 1
+
+########## Logging Settings ##########
+log_error_verbosity             = 2             ## Default is 2. 1=ERROR, 2=ERROR,WARNING, 3=ERROR,WARNING,INFORMATION
+long_query_time                 = 5             ## Default is 10. Track long query over x seconds.
+slow_query_log                  = 1             ## Default is Off. Disabled on production.
+slow_query_log_file             = /var/lib/mysql/mysql_slow.log
+
+########## InnoDB Settings ##########
+default_storage_engine          = InnoDB
+innodb_buffer_pool_instances    = 2             ## Use 1 instance per 1GB of InnoDB pool size - max is 64.
+innodb_buffer_pool_size         = 2G            ## For InnoDB caches table and index data.
+innodb_data_file_path           = ibdata1:12M:autoextend
+innodb_file_per_table           = on
+innodb_flush_log_at_trx_commit  = 1             ## Default is 1. For full ACID compliance, set to 1.
+innodb_flush_method             = O_DIRECT      ## Default is fsync.
+innodb_lock_wait_timeout        = 40            ## Default is 50. The length of time in seconds a transaction waits for row lock before giving up.
+innodb_log_buffer_size          = 16M           ## Buffer size for logging.
+innodb_log_file_size            = 512M          ## File size for logging.
+innodb_monitor_enable           = all           ## Default is blank. Enables InnoDB metrics counters.
+innodb_read_io_threads          = 12            ## Default is 4. The number of I/O threads for read operations.
+innodb_write_io_threads         = 12            ## Default is 4. The number of I/O threads for write operations.
+
+########## MyISAM Settings ##########
+key_buffer_size                 = 256M
+
+########## Connection Settings ##########
+back_log                        = 50            ## Total listen queue for incoming TCP/IP connections.
+max_connections                 = 500           ## The maximum permitted number of simultaneous client connections.
+max_connect_errors              = 100000        ## The maximum connection errors before host is blocked from further connections.
+max_allowed_packet              = 512M          ## Default is 64MB. The maximum size of one packet.
+thread_cache_size               = 50            ## Cache disconnect clients connections for reuse.
+wait_timeout                    = 28800         ## Close application session with no activity over x seconds (default 28800 seconds = 8 hours)
+interactive_timeout             = 28800         ## Close MySQL Client session with no activity over x seconds (default 28800 seconds = 8 hours)
+
+########## Buffer Settings ##########
+innodb_sort_buffer_size         = 2M
+join_buffer_size                = 4M
+read_buffer_size                = 3M
+read_rnd_buffer_size            = 4M
+sort_buffer_size                = 4M
+
+########## Table Settings ##########
+table_definition_cache          = 2000          ## MIN(400 + table_open_cache / 2, 2000)
+table_open_cache                = 10000         ## The number of open tables for all threads
+max_heap_table_size             = 128M          ## Increase to 256M or 512M if you have lots of temporary tables because of missing indices in JOINs
+tmp_table_size                  = 128M          ## Use same value as max_heap_table_size
+
+open_files_limit                = 30000         ## Default 5000, or 10 + max_connections + (table_open_cache * 2)
+                                                ## open files limit usually set in /etc/sysctl.conf and /etc/security/limits.conf
+                                                ## In systemd managed systems this limit must also be set in:
+                                                ## - /etc/systemd/system/mysqld.service.d/override.conf (for MySQL 5.7+ in CentOS)
+                                                ## otherwise changing open_files_limit will have no effect.
+
+########## Misc Settings ##########
+local_infile                    = on            ## Allow servier-side to load file
+secure_file_priv                = ''            ## Blank is disable. It limits export and import within directory
+skip_name_resolve               = on            ## Set to use all host column values in the grant tables must be IP addresses.
+
+
+########## Replication Settings ##########
+# read_only                     = on                  ## Read only replication slave
+# super-read-only               = on                  ## Read only replication slave
+
+gtid_mode                       = on                  ## Global transaction identifiers
+enforce_gtid_consistency        = on                  ## Global transaction identifiers
+
+log_slave_updates               = on                  ## For replication
+relay_log                       = relay-bin           ## For replication
+relay_log_recovery              = on                  ## For replication
+#auto_increment_increment       = 2                   ## For master/master replication
+#auto_increment_offset          = 1                   ## For master/master replication (*)
+

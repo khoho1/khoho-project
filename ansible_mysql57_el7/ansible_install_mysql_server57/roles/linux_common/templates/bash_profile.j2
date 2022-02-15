@@ -1,0 +1,47 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+export PATH=$PATH:$HOME/.local/bin:$HOME/bin:/usr/local/bin:.
+
+umask 022
+
+########## MySQL environment setting
+alias mc6="mysql -u root --socket=/var/lib/mysql/mysql.sock"
+alias mshut6="sudo systemctl stop mysqld"
+alias mstart6="sudo systemctl start mysqld"
+
+alias kps='ps -ef | egrep "(mysqld|oracle|apache)" | grep -v grep '
+alias kenv='echo ""; env | egrep "(MYSQL|HOME|JAVA|JRE|PATH)" | sort ; echo "" '
+alias kcs="mysqlsh clusteradmin@`hostname -s` -- cluster status"
+
+TITLE_NAME='MySQL Replication'
+export PROMPT_COMMAND='printf "\033]0;${TITLE_NAME} %s@%s\007" "${USER}" "${HOSTNAME%%.*}"'
+
+function splash() {
+  RAM_USAGE=`free -t -m | grep Total | awk '{print $3" MB";}'`
+  RAM_TOTAL=`free -t -m | grep "Mem" | awk '{print $2" MB";}'`
+  LOAD1=`cat /proc/loadavg | awk {'print $1'}`
+  LOAD5=`cat /proc/loadavg | awk {'print $2'}`
+  LOAD15=`cat /proc/loadavg | awk {'print $3'}`
+  SWAP=`free -m | tail -n 1 | awk '{print $3}'`
+  UPTIME=`uptime -p | sed 's/^up //'`
+  echo "
+************************************************************
+** Environment.......  $TITLE_NAME
+** Hostname..........  `hostname`
+** CPU Usage.........  $LOAD1, $LOAD5, $LOAD15 (1, 5, 15 min)
+** Memory Usage......  $RAM_USAGE / $RAM_TOTAL
+** Swap Usage........  `free -m | tail -n 1 | awk '{print $3}'` MB
+** Uptime............  $UPTIME
+************************************************************
+"
+}
+
+splash
+

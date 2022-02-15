@@ -1,6 +1,6 @@
 ## Create AWS EC2 Virtual Machine
 
-The Terraform script creates single virtual machine for database in the private subnet. You can not access virtual machine from the internet. You have to connect to the public VM and ssh into the private instance. You should create a jumpbox node dedicates to access VM into private subnet.
+The Terraform script creates single virtual machine for database in the private subnet. You can not access virtual machine from the internet. You have to connect to the public VM and ssh into the private instance. You should create a jumpbox node dedicates to access VM into private subnet. Review the aws_variables.tf file and update to your environment.
 
 
 How to run Terraform:

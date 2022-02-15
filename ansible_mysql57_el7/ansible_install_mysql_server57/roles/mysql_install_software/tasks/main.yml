@@ -1,0 +1,32 @@
+---
+## Author: Kho Ho - Playbook MySQL Software Installation
+
+  - name: Gather rpm package facts
+    package_facts:
+      manager: auto
+
+  - name: Check if MySQL package is installed
+    yum: list={{mysql_sw_pkg_search}} disablerepo=*
+    register: reg_sw_package
+
+  - name: Show Message
+    debug: msg="If MySQL Server package exists, skip playbook. Unless, force install is true"
+
+  - name: Define execute playbook variable
+    set_fact:
+      exec_playbook: false
+
+  - name: Set execute playbook variable
+    set_fact:
+      exec_playbook: true
+    when: (mysql_sw_install_force == false and reg_sw_package.results[0].name is undefined) or
+          (mysql_sw_install_force == true)
+
+  # - debug: var=reg_sw_package.results[0].name
+  # - debug: var=exec_playbook
+
+  - name: Include MySQL installation playbook
+    include: "install_mysql_software.yml"
+    when: exec_playbook
+
+

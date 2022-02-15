@@ -1,6 +1,6 @@
 ## Create EC2 key pair resource
 
-The Terraform script creates a SSH key resource and <namespace>_private_key.pem file. You should store it in a safe and secure location since it is a private key. The private key file is the only way for you to connect to your EC2 virtual machine.
+The Terraform script creates a SSH key resource and <namespace>_private_key.pem file. You should store it in a safe and secure location since it is a private key. The private key file is the only way for you to connect to your EC2 virtual machine. Review the aws_variables.tf file and update to your environment.
 
 You should use puttygen.exe to create a .ppk file for your pageant.exe. This way, you streamline your putty connection without the need to include the private key file.
 

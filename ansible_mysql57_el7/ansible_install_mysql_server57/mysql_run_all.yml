@@ -1,0 +1,14 @@
+---
+## Author: Kho Ho - Playbook
+
+  - name: "Configure Linux 8 and Setup MySQL 8"
+    hosts: all
+    remote_user: centos
+    become: yes
+    gather_facts: true
+    serial: 10
+    roles:
+      - linux_common
+      - mysql_install_software
+
+
