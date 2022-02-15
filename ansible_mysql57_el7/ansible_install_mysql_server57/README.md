@@ -1,6 +1,6 @@
 ## Ansible Install MySQL Software and Configure Databases
 
-The Playbook will install MySQL Software and configure databases. You can run Playbook over and over again without an image restore or recreate you VMs. CAUTION, it has logic to remove all existing database data files in data directory.
+The Playbook will install MySQL Software and configure databases. You can run Playbook over and over again without an image restore or recreate your VMs. CAUTION, it has logic to remove all existing database data files in data directory. Review the all.yml file and update to your environment.
 
 
 Procedure to run Playbook:

@@ -1,6 +1,6 @@
 ## Ansible Setup MySQL Master/Slave Replication
 
-The Playbook will configure multiple slaves to one master node. You can run Playbook over and over again without an image restore or recreate you VMs. CAUTION, it has logic to remove dbtools database in data directory.
+The Playbook will configure multiple slaves to one master node. You can run Playbook over and over again without an image restore or recreate your VMs. CAUTION, it has logic to remove dbtools database in data directory. Review the all.yml file and update to your environment.
 
 
  Procedure to run Playbook:
